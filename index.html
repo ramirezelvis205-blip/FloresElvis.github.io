@@ -12,7 +12,7 @@
         }
 
         body {
-            background: #090a0f;
+            background: #07090e;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -35,7 +35,7 @@
             font-size: 1.8rem;
             font-weight: 700;
             margin-bottom: 5px;
-            text-shadow: 0 0 15px rgba(255, 235, 59, 0.7);
+            text-shadow: 0 0 15px rgba(255, 235, 59, 0.8);
         }
 
         p.subtitle {
@@ -54,7 +54,7 @@
 
     <div class="container">
         <h1>Para Alguien Especial 💛</h1>
-        <p class="subtitle">Floreciendo para ti...</p>
+        <p class="subtitle">Un jardín entero floreciendo para ti...</p>
         <canvas id="flowerCanvas"></canvas>
     </div>
 
@@ -63,18 +63,28 @@
         const ctx = canvas.getContext('2d');
 
         function resizeCanvas() {
-            canvas.width = Math.min(window.innerWidth, 450);
-            canvas.height = Math.min(window.innerHeight * 0.75, 500);
+            canvas.width = Math.min(window.innerWidth, 480);
+            canvas.height = Math.min(window.innerHeight * 0.78, 540);
         }
         resizeCanvas();
 
-        let progress = 0; // Control de progreso general de la animación (0 a 100)
+        let progress = 0;
 
-        // Dibujar un girasol pequeño de fondo
-        function drawBgSunflower(x, y, maxRadius, currentProgress) {
-            const radius = maxRadius * currentProgress;
-            if (radius <= 0) return;
+        // Generar matriz densa de girasoles de fondo (45 girasoles distribuidos)
+        const bgSunflowers = [];
+        for (let i = 0; i < 45; i++) {
+            bgSunflowers.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 14 + 10,
+                delay: Math.random() * 30 // Diferentes tiempos de brote
+            });
+        }
 
+        // Dibujar girasol de fondo
+        function drawBgSunflower(x, y, maxRadius, p) {
+            if (p <= 0) return;
+            const radius = maxRadius * p;
             const petals = 10;
             const angleStep = (Math.PI * 2) / petals;
 
@@ -92,7 +102,7 @@
 
             ctx.beginPath();
             ctx.arc(x, y, radius * 0.4, 0, Math.PI * 2);
-            ctx.fillStyle = '#4e342e';
+            ctx.fillStyle = '#3e2723';
             ctx.fill();
         }
 
@@ -111,7 +121,7 @@
             ctx.restore();
         }
 
-        // Dibujar flor del ramo principal
+        // Dibujar flor principal del ramo
         function drawMainFlower(x, y, maxRadius, petalCount, curveOffset, currentProgress) {
             const radius = maxRadius * currentProgress;
             if (radius <= 0) return;
@@ -119,16 +129,16 @@
             // Tallo creciente
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.quadraticCurveTo(x + curveOffset, y + (90 * currentProgress), x, y + (200 * currentProgress));
+            ctx.quadraticCurveTo(x + curveOffset, y + (80 * currentProgress), x, y + (190 * currentProgress));
             ctx.lineWidth = 6;
             ctx.strokeStyle = '#2e7d32';
             ctx.lineCap = 'round';
             ctx.stroke();
 
             // Hojas
-            if (currentProgress > 0.4) {
-                drawLeaf(x + (curveOffset > 0 ? 12 : -12), y + 70, 28 * currentProgress, curveOffset > 0 ? Math.PI / 4 : -Math.PI / 4);
-                drawLeaf(x + (curveOffset > 0 ? -8 : 8), y + 120, 24 * currentProgress, curveOffset > 0 ? -Math.PI / 3 : Math.PI / 3);
+            if (currentProgress > 0.3) {
+                drawLeaf(x + (curveOffset > 0 ? 10 : -10), y + 60, 26 * currentProgress, curveOffset > 0 ? Math.PI / 4 : -Math.PI / 4);
+                drawLeaf(x + (curveOffset > 0 ? -6 : 6), y + 110, 22 * currentProgress, curveOffset > 0 ? -Math.PI / 3 : Math.PI / 3);
             }
 
             // Pétalos que se van abriendo
@@ -163,41 +173,43 @@
             ctx.fill();
         }
 
-        // Coordenadas fijas para el fondo
-        const bgSunflowers = [
-            {x: 50, y: 80, r: 20}, {x: 380, y: 60, r: 25},
-            {x: 80, y: 400, r: 22}, {x: 360, y: 420, r: 18},
-            {x: 40, y: 240, r: 18}, {x: 400, y: 220, r: 20},
-            {x: 200, y: 50, r: 15}, {x: 220, y: 440, r: 16}
-        ];
-
         // Bucle de animación garantizado mediante setInterval
         const animationTimer = setInterval(() => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Dibujar girasoles de fondo progresivos
+            // 1. Llenar el fondo con muchos girasoles brotando
             bgSunflowers.forEach(sf => {
-                drawBgSunflower(sf.x, sf.y, sf.r, Math.min(progress / 50, 1));
+                if (progress > sf.delay) {
+                    const localProgress = Math.min((progress - sf.delay) / 40, 1);
+                    drawBgSunflower(sf.x, sf.y, sf.r, localProgress);
+                }
             });
 
-            // 2. Dibujar ramo de flores principales tras cierto avance
-            if (progress > 20) {
-                const bouquetProgress = (progress - 20) / 80; // Escala de 0 a 1
-                const centerX = canvas.width / 2;
-                const centerY = canvas.height / 2 - 10;
+            // 2. Dibujar ramo principal de 5 flores
+            if (progress > 15) {
+                const bP = Math.min((progress - 15) / 85, 1); // Progreso del ramo
+                const cX = canvas.width / 2;
+                const cY = canvas.height / 2 - 10;
 
-                drawMainFlower(centerX - 60, centerY + 30, 40, 10, 15, bouquetProgress);
-                drawMainFlower(centerX + 60, centerY + 35, 38, 10, -15, bouquetProgress);
-                drawMainFlower(centerX, centerY - 20, 55, 12, 5, bouquetProgress);
+                // Flores traseras del ramo
+                drawMainFlower(cX - 80, cY + 55, 35, 10, 20, bP);
+                drawMainFlower(cX + 80, cY + 60, 33, 10, -20, bP);
+
+                // Flores medias del ramo
+                drawMainFlower(cX - 45, cY + 20, 42, 10, 10, bP);
+                drawMainFlower(cX + 45, cY + 25, 40, 10, -10, bP);
+
+                // Flor central principal grande
+                drawMainFlower(cX, cY - 35, 56, 12, 0, bP);
             }
 
-            // Incrementar progreso hasta completar
+            // Incrementar progreso
             if (progress < 100) {
                 progress += 1;
             } else {
-                clearInterval(animationTimer); // Detener el reloj al terminar para ahorrar recursos
+                clearInterval(animationTimer);
             }
-        }, 30); // Actualiza cada 30 milisegundos
+        }, 30);
     </script>
 </body>
 </html>
