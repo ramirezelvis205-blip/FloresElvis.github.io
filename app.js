@@ -1,171 +1,124 @@
-let Titulo = document.title;
-
-window.addEventListener('blur', () => {
-    Titulo = document.title;
-    document.title = "No te vallas, regresa :(";
-})
-
-window.addEventListener('focus', () => {
-    document.title = Titulo;
-})
-
-let h1 = document.getElementById("Titulo");
-let Boton1 = document.getElementById("B1");
-Boton1.addEventListener('click', function() {
-    const ContenedorBotones = document.querySelector(".Con");
-    document.querySelector(".Texto").style.display = "block";
-    ContenedorBotones.style.display = "none";
-    DibujarFlor(500, 100, 6, 30, 100, 200);
-    h1.remove();
-})
-
-document.getElementById("B12").addEventListener('click', function() {
-    const ContenedorBotones = document.querySelector(".Con");
-    ContenedorBotones.style.display = "none";
-    document.querySelector(".Texto").style.display = "block";
-    CrearVarias();
-    h1.remove();
-})
-
-const canvas = document.getElementById('Flor');
+const canvas = document.getElementById('flowerCanvas');
 const ctx = canvas.getContext('2d');
 
-function DibujarPetalo(x, y, RadioX, scala, Rotacion, color, pasos) {
-    const Numero = scala;
+// Ajustar dimensiones del canvas
+function resizeCanvas() {
+    canvas.width = Math.min(window.innerWidth * 0.9, 500);
+    canvas.height = Math.min(window.innerHeight * 0.7, 600);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-    const AnguloIncrement = (Math.PI / pasos) * 2;
+// Dibuja una flor completa con tallo y hojas
+function drawYellowFlower(x, y, radius, petalCount) {
+    // 1. Tallo elegante
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x + 30, y + 150, x - 10, y + 300);
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = '#2d5a27';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // 2. Hojas del tallo
+    drawLeaf(x + 15, y + 100, 40, Math.PI / 4);
+    drawLeaf(x + 8, y + 180, 45, -Math.PI / 3);
+
+    // 3. Capa de pétalos traseros (sombra/volumen)
+    drawPetals(x, y, radius * 1.05, petalCount, '#fbc02d', '#f57f17');
+
+    // 4. Capa de pétalos principales (amarillo vibrante)
+    drawPetals(x, y, radius, petalCount, '#ffeb3b', '#fbc02d');
+
+    // 5. Centro de la flor (margarita / girasol)
+    drawFlowerCenter(x, y, radius * 0.35);
+}
+
+// Dibujar hoja con curva natural
+function drawLeaf(x, y, size, angle) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.rotate(Rotacion);
-    ctx.scale(1, Numero);
+    ctx.rotate(angle);
     ctx.beginPath();
-    for (let i = 0; i <= pasos; i++) {
-        const AnguloActual = i * AnguloIncrement;
-        const currentRadius = Math.sin(AnguloActual) * RadioX;
-        const PuntoY = Math.sin(AnguloActual) * currentRadius;
-        const PuntoX = Math.cos(AnguloActual) * currentRadius;
-        if (i === 0) {
-          ctx.moveTo(PuntoX, PuntoY);
-        } else {
-          ctx.lineTo(PuntoX, PuntoY);
-        }
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.stroke();
-      }
+    ctx.ellipse(0, 0, size, size / 3, 0, 0, Math.PI * 2);
     
-      ctx.restore();
+    const leafGrad = ctx.createLinearGradient(-size, 0, size, 0);
+    leafGrad.addColorStop(0, '#388e3c');
+    leafGrad.addColorStop(1, '#1b5e20');
+    ctx.fillStyle = leafGrad;
+    ctx.fill();
+    ctx.restore();
 }
 
-function DibujarFlor(x, y, NumeroPetalos, RadioXPetalo, RadioYPetalo, AltoTrazo) {
-    // Tallo
-    const PasosTallo = 50;
-    const AltoTallo = AltoTrazo / PasosTallo;
-    let NuevaY = y;
+// Dibujar pétalos con distribución circular
+function drawPetals(x, y, radius, count, colorStart, colorEnd) {
+    const angleStep = (Math.PI * 2) / count;
 
-  const DibujarTallo = () => {
-    if (NuevaY < y + AltoTrazo) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, NuevaY);
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'black';
-      ctx.stroke();
-      NuevaY += AltoTallo;
-      setTimeout(DibujarTallo, 100);
-    } else {
-      // Dibuja los petalos en el tallo
-      const Pasos = 50;
-      let CuantosPasos = 0;
-      function DibujarPetalosTallo() {
-        if (CuantosPasos <= Pasos) {
-          const PetaloY = y + 250 - RadioYPetalo;
-          const PetaloY2 = y + 200 - RadioYPetalo;
-          DibujarPetalo(500, PetaloY, 15, 2, 300, 'green', CuantosPasos);
-          DibujarPetalo(470, PetaloY2, 15, 2, 300, 'green', CuantosPasos);
-          CuantosPasos++;
-          setTimeout(DibujarPetalosTallo, 100);
-        }
-      }
-      DibujarPetalosTallo();
-    }
-  };
-  DibujarTallo();
+    for (let i = 0; i < count; i++) {
+        const angle = i * angleStep;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
 
-    const AnguloIncrement = (Math.PI * 2) / NumeroPetalos;
-  
-    let contadorPetalos = 0;
-    function dibujarSiguientePetalo() {
-        if (contadorPetalos <= NumeroPetalos) {
-          const Angulo = contadorPetalos * AnguloIncrement;
-          DibujarPetalo(x, y, RadioXPetalo, 2, Angulo, 'yellow', 100);
-          contadorPetalos++;
-          setTimeout(dibujarSiguientePetalo, 1000); 
-        }
-        // Dibuja el centro de la flor
         ctx.beginPath();
-        ctx.arc(x, y, 10, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(radius * 0.4, -radius * 0.3, 0, -radius);
+        ctx.quadraticCurveTo(-radius * 0.4, -radius * 0.3, 0, 0);
+
+        const petalGradient = ctx.createRadialGradient(0, 0, 5, 0, -radius, radius);
+        petalGradient.addColorStop(0, colorStart);
+        petalGradient.addColorStop(0.8, colorEnd);
+        petalGradient.addColorStop(1, '#fff59d');
+
+        ctx.fillStyle = petalGradient;
+        ctx.shadowColor = 'rgba(255, 193, 7, 0.4)';
+        ctx.shadowBlur = 8;
         ctx.fill();
-      }
-      dibujarSiguientePetalo();
-}
 
-function DibujarFlorSinTallo(x, y, NumeroPetalos, RadioXPetalo, RadioYPetalo, AltoTrazo) {
-    // Dibuja el tallo
-    const PasosTallo = 50;
-    const AltoTallo = AltoTrazo / PasosTallo;
-    let NuevaY = y;
-
-  const DibujarTallo = () => {
-    if (NuevaY < y + AltoTrazo) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, NuevaY);
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'black';
-      ctx.stroke();
-      NuevaY += AltoTallo;
-      setTimeout(DibujarTallo, 100);
-    } 
-  };
-  DibujarTallo();
-
-    const AnguloIncrement = (Math.PI * 2) / NumeroPetalos;
-  
-    // Dibuja los pétalos
-    let contadorPetalos = 0;
-    function dibujarSiguientePetalo() {
-        if (contadorPetalos <= NumeroPetalos) {
-          const Angulo = contadorPetalos * AnguloIncrement;
-          DibujarPetalo(x, y, RadioXPetalo, 2, Angulo, 'yellow', 100);
-          contadorPetalos++;
-          setTimeout(dibujarSiguientePetalo, 1000); 
-        }
-        // Dibuja el centro de la flor
-        ctx.beginPath();
-        ctx.arc(x, y, 10, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
-        ctx.fill();
-      }
-      dibujarSiguientePetalo();
-}
-
-function CrearVarias() {
-    const numFlores = 12;
-
-    // Espaciamiento y tamaño de cada flor
-    const espacioX = canvas.width / 4;
-    const espacioY = canvas.height / 3;
-    const TamañoFlor = 130;
-
-    for (let i = 0; i <= numFlores; i++) {
-        const fila = Math.floor(i / 4);
-        const columna = i % 4;
-        const x = espacioX * columna + espacioX / 2;
-        const y = espacioY * fila + espacioY / 2;
-
-        DibujarFlorSinTallo(x, y, 8, 30, 80, TamañoFlor);
+        ctx.restore();
     }
 }
+
+// Centro detallado con textura de polen
+function drawFlowerCenter(x, y, centerRadius) {
+    ctx.beginPath();
+    ctx.arc(x, y, centerRadius, 0, Math.PI * 2);
+
+    const centerGrad = ctx.createRadialGradient(x, y, 2, x, y, centerRadius);
+    centerGrad.addColorStop(0, '#8d6e63');
+    centerGrad.addColorStop(0.6, '#5d4037');
+    centerGrad.addColorStop(1, '#3e2723');
+
+    ctx.fillStyle = centerGrad;
+    ctx.fill();
+
+    // Detalle de puntos de polen
+    for (let i = 0; i < 40; i++) {
+        const r = Math.random() * (centerRadius - 3);
+        const theta = Math.random() * Math.PI * 2;
+        const px = x + r * Math.cos(theta);
+        const py = y + r * Math.sin(theta);
+
+        ctx.beginPath();
+        ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffb74d';
+        ctx.fill();
+    }
+}
+
+// Renderizar ramo central
+function renderScene() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2 - 20;
+
+    // Flor principal y secundarias
+    drawYellowFlower(centerX - 70, centerY + 40, 55, 12);
+    drawYellowFlower(centerX + 70, centerY + 50, 50, 10);
+    drawYellowFlower(centerX, centerY - 30, 75, 14);
+}
+
+renderScene();
+
+// Re-renderizar al hacer clic
+canvas.addEventListener('click', renderScene);
