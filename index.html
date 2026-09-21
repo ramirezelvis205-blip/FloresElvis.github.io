@@ -12,7 +12,7 @@
         }
 
         body {
-            background: #07090e;
+            background: #05070a;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -35,7 +35,7 @@
             font-size: 1.8rem;
             font-weight: 700;
             margin-bottom: 5px;
-            text-shadow: 0 0 15px rgba(255, 235, 59, 0.8);
+            text-shadow: 0 0 15px rgba(255, 235, 59, 0.9);
         }
 
         p.subtitle {
@@ -54,7 +54,7 @@
 
     <div class="container">
         <h1>Para Alguien Especial 💛</h1>
-        <p class="subtitle">Un jardín entero floreciendo para ti...</p>
+        <p class="subtitle">Un cielo lleno de amor y flores para ti...</p>
         <canvas id="flowerCanvas"></canvas>
     </div>
 
@@ -64,21 +64,78 @@
 
         function resizeCanvas() {
             canvas.width = Math.min(window.innerWidth, 480);
-            canvas.height = Math.min(window.innerHeight * 0.78, 540);
+            canvas.height = Math.min(window.innerHeight * 0.78, 560);
         }
         resizeCanvas();
 
         let progress = 0;
 
-        // Generar matriz densa de girasoles de fondo (45 girasoles distribuidos)
+        // 1. Matriz masiva de girasoles de fondo (60 girasoles)
         const bgSunflowers = [];
-        for (let i = 0; i < 45; i++) {
+        for (let i = 0; i < 60; i++) {
             bgSunflowers.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                r: Math.random() * 14 + 10,
-                delay: Math.random() * 30 // Diferentes tiempos de brote
+                r: Math.random() * 12 + 8,
+                delay: Math.random() * 30
             });
+        }
+
+        // 2. Corazones flotantes
+        const hearts = [];
+        for (let i = 0; i < 20; i++) {
+            hearts.push({
+                x: Math.random() * canvas.width,
+                y: canvas.height + Math.random() * 100,
+                size: Math.random() * 12 + 8,
+                speedY: Math.random() * 1.5 + 0.8,
+                speedX: (Math.random() - 0.5) * 0.5,
+                opacity: Math.random() * 0.7 + 0.3
+            });
+        }
+
+        // 3. Fuegos Artificiales
+        const fireworks = [];
+        const particles = [];
+
+        function launchFirework() {
+            fireworks.push({
+                x: Math.random() * (canvas.width - 100) + 50,
+                y: canvas.height,
+                targetY: Math.random() * (canvas.height * 0.4) + 50,
+                speed: Math.random() * 3 + 4,
+                color: ['#ffeb3b', '#fbc02d', '#ff9800', '#ffffff'][Math.floor(Math.random() * 4)]
+            });
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 30; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3 + 1;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    alpha: 1,
+                    color: color
+                });
+            }
+        }
+
+        // Dibujar un Corazón
+        function drawHeart(x, y, size, opacity) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.beginPath();
+            ctx.moveTo(0, -size / 2);
+            ctx.bezierCurveTo(size / 2, -size, size, -size / 3, 0, size / 2);
+            ctx.bezierCurveTo(-size, -size / 3, -size / 2, -size, 0, -size / 2);
+            ctx.fillStyle = `rgba(255, 82, 82, ${opacity})`;
+            ctx.shadowColor = '#ff5252';
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.restore();
         }
 
         // Dibujar girasol de fondo
@@ -141,7 +198,7 @@
                 drawLeaf(x + (curveOffset > 0 ? -6 : 6), y + 110, 22 * currentProgress, curveOffset > 0 ? -Math.PI / 3 : Math.PI / 3);
             }
 
-            // Pétalos que se van abriendo
+            // Pétalos
             const angleStep = (Math.PI * 2) / petalCount;
             for (let i = 0; i < petalCount; i++) {
                 const angle = i * angleStep;
@@ -160,8 +217,8 @@
                 petalGrad.addColorStop(1, '#fffde7');
 
                 ctx.fillStyle = petalGrad;
-                ctx.shadowColor = 'rgba(255, 193, 7, 0.5)';
-                ctx.shadowBlur = 6;
+                ctx.shadowColor = 'rgba(255, 193, 7, 0.6)';
+                ctx.shadowBlur = 8;
                 ctx.fill();
                 ctx.restore();
             }
@@ -173,11 +230,11 @@
             ctx.fill();
         }
 
-        // Bucle de animación garantizado mediante setInterval
+        // Bucle Principal
         const animationTimer = setInterval(() => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Llenar el fondo con muchos girasoles brotando
+            // 1. Girasoles de fondo
             bgSunflowers.forEach(sf => {
                 if (progress > sf.delay) {
                     const localProgress = Math.min((progress - sf.delay) / 40, 1);
@@ -185,29 +242,67 @@
                 }
             });
 
-            // 2. Dibujar ramo principal de 5 flores
+            // 2. Corazones Flotantes
+            hearts.forEach(h => {
+                drawHeart(h.x, h.y, h.size, h.opacity);
+                h.y -= h.speedY;
+                h.x += h.speedX;
+                if (h.y < -20) {
+                    h.y = canvas.height + 20;
+                    h.x = Math.random() * canvas.width;
+                }
+            });
+
+            // 3. Fuegos artificiales
+            if (progress > 30 && Math.random() < 0.08) {
+                launchFirework();
+            }
+
+            fireworks.forEach((fw, index) => {
+                ctx.beginPath();
+                ctx.arc(fw.x, fw.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = fw.color;
+                ctx.fill();
+                fw.y -= fw.speed;
+
+                if (fw.y <= fw.targetY) {
+                    createExplosion(fw.x, fw.y, fw.color);
+                    fireworks.splice(index, 1);
+                }
+            });
+
+            particles.forEach((p, index) => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.02;
+
+                if (p.alpha <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+
+            // 4. Ramo central de flores principales
             if (progress > 15) {
-                const bP = Math.min((progress - 15) / 85, 1); // Progreso del ramo
+                const bP = Math.min((progress - 15) / 85, 1);
                 const cX = canvas.width / 2;
                 const cY = canvas.height / 2 - 10;
 
-                // Flores traseras del ramo
                 drawMainFlower(cX - 80, cY + 55, 35, 10, 20, bP);
                 drawMainFlower(cX + 80, cY + 60, 33, 10, -20, bP);
-
-                // Flores medias del ramo
                 drawMainFlower(cX - 45, cY + 20, 42, 10, 10, bP);
                 drawMainFlower(cX + 45, cY + 25, 40, 10, -10, bP);
-
-                // Flor central principal grande
                 drawMainFlower(cX, cY - 35, 56, 12, 0, bP);
             }
 
-            // Incrementar progreso
             if (progress < 100) {
-                progress += 1;
-            } else {
-                clearInterval(animationTimer);
+                progress += 0.8;
             }
         }, 30);
     </script>
