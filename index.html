@@ -3,16 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flores Amarillas</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Flores Amarillas 💛</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #090a0f;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            z-index: 2;
+        }
+
+        h1 {
+            color: #ffeb3b;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 0 0 15px rgba(255, 235, 59, 0.7);
+            letter-spacing: 1px;
+            opacity: 0;
+            animation: fadeIn 2s ease forwards 1s;
+        }
+
+        p.subtitle {
+            font-size: 0.9rem;
+            color: #d1d5db;
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: fadeIn 2s ease forwards 2s;
+        }
+
+        canvas {
+            background: transparent;
+            touch-action: none;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
 </head>
 <body>
-    <div class="card-container">
-        <h1 class="title">Para Alguien Especial 💛</h1>
+
+    <div class="container">
+        <h1>Para Alguien Especial 💛</h1>
+        <p class="subtitle">Floreciendo para ti...</p>
         <canvas id="flowerCanvas"></canvas>
-        <p class="subtitle">Haz clic en el lienzo para florecer de nuevo</p>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        const canvas = document.getElementById('flowerCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = Math.min(window.innerWidth, 500);
+            canvas.height = Math.min(window.innerHeight * 0.75, 550);
+        }
+        resizeCanvas();
+
+        let backgroundSunflowers = [];
+        let mainBouquetScale = 0; // Escala progresiva del ramo central
+
+        // Generar posiciones aleatorias para los girasoles de fondo
+        function initBackgroundSunflowers() {
+            backgroundSunflowers = [];
+            const total = 22; // Cantidad de girasoles en la pantalla
+            for (let i = 0; i < total; i++) {
+                backgroundSunflowers.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    maxRadius: Math.random() * 20 + 15,
+                    currentRadius: 0,
+                    growthSpeed: Math.random() * 0.3 + 0.1,
+                    delay: Math.random() * 120 // Retardo en fotogramas
+                });
+            }
+        }
+
+        // Dibujar un girasol de fondo
+        function drawSunflower(x, y, radius) {
+            if (radius <= 0) return;
+            const petals = 12;
+            const angleStep = (Math.PI * 2) / petals;
+
+            // Pétalos
+            for (let i = 0; i < petals; i++) {
+                const angle = i * angleStep;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.ellipse(0, -radius * 0.8, radius * 0.3, radius * 0.7, 0, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffca28';
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Centro del girasol
+            ctx.beginPath();
+            ctx.arc(x, y, radius * 0.45, 0, Math.PI * 2);
+            ctx.fillStyle = '#4e342e';
+            ctx.fill();
+        }
+
+        // Dibujar hojitas
+        function drawLeaf(x, y, size, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, size, size / 2.8, 0, 0, Math.PI * 2);
+            const leafGrad = ctx.createLinearGradient(-size, 0, size, 0);
+            leafGrad.addColorStop(0, '#4caf50');
+            leafGrad.addColorStop(1, '#1b5e20');
+            ctx.fillStyle = leafGrad;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Dibujar flor del ramo principal
+        function drawMainFlower(x, y, radius, petalCount, curveOffset) {
+            // Tallo
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.quadraticCurveTo(x + curveOffset, y + 90, x, y + 220);
+            ctx.lineWidth = 7;
+            ctx.strokeStyle = '#2e7d32';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Hojas
+            drawLeaf(x + (curveOffset > 0 ? 12 : -12), y + 70, 30, curveOffset > 0 ? Math.PI / 4 : -Math.PI / 4);
+            drawLeaf(x + (curveOffset > 0 ? -8 : 8), y + 130, 26, curveOffset > 0 ? -Math.PI / 3 : Math.PI / 3);
+
+            // Pétalos
+            const angleStep = (Math.PI * 2) / petalCount;
+            for (let i = 0; i < petalCount; i++) {
+                const angle = i * angleStep;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(radius * 0.45, -radius * 0.35, 0, -radius);
+                ctx.quadraticCurveTo(-radius * 0.45, -radius * 0.35, 0, 0);
+
+                const petalGrad = ctx.createRadialGradient(0, 0, 4, 0, -radius, radius);
+                petalGrad.addColorStop(0, '#ffeb3b');
+                petalGrad.addColorStop(0.8, '#fbc02d');
+                petalGrad.addColorStop(1, '#fffde7');
+
+                ctx.fillStyle = petalGrad;
+                ctx.shadowColor = 'rgba(255, 193, 7, 0.5)';
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Centro detallado
+            ctx.beginPath();
+            ctx.arc(x, y, radius * 0.35, 0, Math.PI * 2);
+            const centerGrad = ctx.createRadialGradient(x, y, 2, x, y, radius * 0.35);
+            centerGrad.addColorStop(0, '#6d4c41');
+            centerGrad.addColorStop(0.7, '#4e342e');
+            centerGrad.addColorStop(1, '#261713');
+            ctx.fillStyle = centerGrad;
+            ctx.fill();
+        }
+
+        let frameCount = 0;
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            frameCount++;
+
+            // 1. Animación de girasoles de fondo brotando paulatinamente
+            backgroundSunflowers.forEach(sf => {
+                if (frameCount > sf.delay) {
+                    if (sf.currentRadius < sf.maxRadius) {
+                        sf.currentRadius += sf.growthSpeed;
+                    }
+                }
+                drawSunflower(sf.x, sf.y, sf.currentRadius);
+            });
+
+            // 2. Animación de aparición del ramo central
+            if (frameCount > 60 && mainBouquetScale < 1) {
+                mainBouquetScale += 0.012;
+            }
+
+            if (mainBouquetScale > 0) {
+                ctx.save();
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                // Transición de escala y punto pivot en el centro
+                ctx.translate(centerX, centerY);
+                ctx.scale(mainBouquetScale, mainBouquetScale);
+                ctx.translate(-centerX, -centerY);
+
+                // Dibujo del bouquet de flores amarillas principal
+                drawMainFlower(centerX - 65, centerY + 30, 42, 10, 20);
+                drawMainFlower(centerX + 65, centerY + 40, 40, 10, -20);
+                drawMainFlower(centerX, centerY - 25, 58, 12, 5);
+
+                ctx.restore();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        initBackgroundSunflowers();
+        animate();
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initBackgroundSunflowers();
+        });
+    </script>
 </body>
 </html>
